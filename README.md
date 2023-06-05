@@ -9,4 +9,4 @@ You should set the folder variable as the parent folder that holds your media fo
 e.g. when folder is set as /mediaserver/ and libraries is set as "audio", it will monitor the whole mediaserver folder, but will only touch a file in the audio folder when changes are detected in it.<br><br>
 
 
-Works at least with Pytnon3.9 and Watchdog 3.0.0.
+Works at least with Python3.9 and Watchdog 3.0.0.
