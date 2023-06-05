@@ -36,7 +36,7 @@ recur = True
 ## log changes to a file True/False
 logging = False
 ## logfile location/name
-logfile = "/mediaserver/null_filechanges.log"
+logfile = "/var/log/watchertoucher.log"
 
 
 def logger(etype, src, dest=None):
