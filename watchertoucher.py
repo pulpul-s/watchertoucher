@@ -41,12 +41,12 @@ def logger(etype, src, dest=None):
     pvm = now.strftime("%d.%m.%Y %H:%M:%S")
 
     if etype == "new":
-        logentry = pvm + " New file " + src + "\n"
+        logentry = pvm + " File created " + src + "\n"
     elif etype == "del":
-        logentry = pvm + " Removed file " + src + "\n"
+        logentry = pvm + " File removed " + src + "\n"
     elif etype == "move":
         logentry = (
-            pvm + " Moved or renamed file " + src + " " + "->" + " " + dest + "\n"
+            pvm + " File moved or renamed " + src + " " + "->" + " " + dest + "\n"
         )
 
     if logging == True:
