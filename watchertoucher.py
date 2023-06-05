@@ -25,13 +25,15 @@ filetypes = [
 ## log changes to a file True/False
 logging = False
 ## logfile location/name
-logfile = "/mediaserver/null_filechanges.log"
+logfile = "/mediaserver/filechanges.log"
 ## watched folder for changes
-folder = "/mediaserver/movies/null-movies/"
+folder = "/mediaserver/videos/"
 ## dummy filename
 touchfile = "watchertoucher.toucher"
 ## files to ignore, don't remove the touchfile from the list
 ignored_files = [touchfile]
+## Watch the folder recusively True/False
+recur = True
 
 
 def logger(etype, src, dest=None):
@@ -88,7 +90,7 @@ class Handler(watchdog.events.PatternMatchingEventHandler):
 if __name__ == "__main__":
     event_handler = Handler()
     observer = PollingObserver()
-    observer.schedule(event_handler, path=folder, recursive=True)
+    observer.schedule(event_handler, path=folder, recursive=recur)
     observer.start()
     try:
         while True:
