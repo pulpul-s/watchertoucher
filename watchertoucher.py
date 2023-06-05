@@ -6,6 +6,8 @@ from watchdog.observers.polling import PollingObserver
 import time
 import os
 from datetime import datetime
+from pathlib import Path
+
 
 ## files to watch
 filetypes = [
@@ -22,18 +24,20 @@ filetypes = [
     "*.flac",
     "*.m4a",
 ]
-## log changes to a file True/False
-logging = False
-## logfile location/name
-logfile = "/mediaserver/filechanges.log"
-## watched folder for changes
-folder = "/mediaserver/videos/"
+## watched folder for changes (this should be the parent directory of your actual media library folders)
+folder = "/mediaserver/libraries/"
+## libraries in watched folder
+libraries = ["video", "audio"]
 ## dummy filename
 touchfile = "watchertoucher.toucher"
 ## files to ignore, don't remove the touchfile from the list
 ignored_files = [touchfile]
 ## Watch the folder recusively True/False
 recur = True
+## log changes to a file True/False
+logging = False
+## logfile location/name
+logfile = "/mediaserver/null_filechanges.log"
 
 
 def logger(etype, src, dest=None):
@@ -57,11 +61,13 @@ def logger(etype, src, dest=None):
         print(logentry, end="")
 
 
-def toucher():
-    # write and delete a dummy file to trigger inotify
-    f = open(folder + touchfile, "w")
-    f.close()
-    os.remove(folder + touchfile)
+def toucher(src, etype=None):
+    # write and delete a dummy file to the root of the library
+    for lib in libraries:
+        if os.path.dirname(src).startswith(folder + lib):
+            f = open(folder + lib + "/" + touchfile, "w")
+            f.close()
+            os.remove(folder + lib + "/" + touchfile)
 
 
 class Handler(watchdog.events.PatternMatchingEventHandler):
@@ -75,15 +81,15 @@ class Handler(watchdog.events.PatternMatchingEventHandler):
         )
 
     def on_created(self, event):
-        toucher()
+        toucher(event.src_path)
         logger("new", event.src_path)
 
     def on_deleted(self, event):
-        toucher()
+        toucher(event.src_path, "del")
         logger("del", event.src_path)
 
     def on_moved(self, event):
-        toucher()
+        toucher(event.src_path)
         logger("move", event.src_path, event.dest_path)
 
 
