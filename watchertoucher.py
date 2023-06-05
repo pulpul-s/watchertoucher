@@ -6,7 +6,6 @@ from watchdog.observers.polling import PollingObserver
 import time
 import os
 from datetime import datetime
-from pathlib import Path
 
 
 ## files to watch
@@ -85,7 +84,7 @@ class Handler(watchdog.events.PatternMatchingEventHandler):
         logger("new", event.src_path)
 
     def on_deleted(self, event):
-        toucher(event.src_path, "del")
+        toucher(event.src_path)
         logger("del", event.src_path)
 
     def on_moved(self, event):
