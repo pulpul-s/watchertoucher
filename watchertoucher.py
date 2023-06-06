@@ -62,24 +62,25 @@ def logger(etype, src, dest=None):
         print(logentry, end="")
 
 
-lasttouch = time.time() - touchdelay
+lasttouch = [time.time() - touchdelay, ""]
 
 
 def toucher(src, etype=None):
     # write and delete a dummy file to the root of the library
+    global lasttouch
     for lib in libraries:
-        global lasttouch
-        if (
+        if (os.path.dirname(src).startswith(folder + lib) and lasttouch[1] != lib) or (
             os.path.dirname(src).startswith(folder + lib)
-            and lasttouch + touchdelay <= time.time()
+            and lasttouch[0] + touchdelay <= time.time()
         ):
             f = open(folder + lib + "/" + touchfile, "w")
             f.close()
             os.remove(folder + lib + "/" + touchfile)
             logger("touch", " - touched " + folder + lib + "/\n")
-            lasttouch = time.time()
+            lasttouch[0] = time.time()
+            lasttouch[1] = lib
             return
-        elif lasttouch + touchdelay > time.time():
+        elif lasttouch[0] + touchdelay > time.time():
             logger(
                 "touch", f" - nothing touched, touched under {touchdelay} seconds ago\n"
             )
