@@ -44,13 +44,13 @@ def logger(etype, src, dest=None):
     pvm = now.strftime("%d.%m.%Y %H:%M:%S")
 
     if etype == "new":
-        logentry = pvm + " File created " + src + "\n"
+        logentry = pvm + " File created " + src
     elif etype == "del":
-        logentry = pvm + " File removed " + src + "\n"
+        logentry = pvm + " File removed " + src
     elif etype == "move":
-        logentry = (
-            pvm + " File moved or renamed " + src + " " + "->" + " " + dest + "\n"
-        )
+        logentry = pvm + " File moved or renamed " + src + " " + "->" + " " + dest
+    elif etype == "touch":
+        logentry = src
 
     if logging == True:
         log = open(logfile, "a")
@@ -67,6 +67,9 @@ def toucher(src, etype=None):
             f = open(folder + lib + "/" + touchfile, "w")
             f.close()
             os.remove(folder + lib + "/" + touchfile)
+            logger("touch", " - touched " + folder + lib + "/\n")
+            return
+    logger("touch", " - not touched\n")
 
 
 class Handler(watchdog.events.PatternMatchingEventHandler):
