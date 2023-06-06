@@ -69,7 +69,7 @@ def toucher(src, etype=None):
             os.remove(folder + lib + "/" + touchfile)
             logger("touch", " - touched " + folder + lib + "/\n")
             return
-    logger("touch", " - not touched\n")
+    logger("touch", " - nothing touched\n")
 
 
 class Handler(watchdog.events.PatternMatchingEventHandler):
