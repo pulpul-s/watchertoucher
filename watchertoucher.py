@@ -83,16 +83,16 @@ class Handler(watchdog.events.PatternMatchingEventHandler):
         )
 
     def on_created(self, event):
-        toucher(event.src_path)
         logger("new", event.src_path)
+        toucher(event.src_path)
 
     def on_deleted(self, event):
-        toucher(event.src_path)
         logger("del", event.src_path)
+        toucher(event.src_path)
 
     def on_moved(self, event):
-        toucher(event.src_path)
         logger("move", event.src_path, event.dest_path)
+        toucher(event.src_path)
 
 
 if __name__ == "__main__":
