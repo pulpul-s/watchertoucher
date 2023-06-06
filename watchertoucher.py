@@ -29,6 +29,8 @@ folder = "/mediaserver/libraries/"
 libraries = ["video", "audio"]
 ## dummy filename
 touchfile = "watchertoucher.toucher"
+## delay in seconds to write new touchfiles, use 0 to disable
+touchdelay = 10
 ## files to ignore, don't remove the touchfile from the list
 ignored_files = [touchfile]
 ## Watch the folder recusively True/False
@@ -60,14 +62,27 @@ def logger(etype, src, dest=None):
         print(logentry, end="")
 
 
+lasttouch = time.time() - touchdelay
+
+
 def toucher(src, etype=None):
     # write and delete a dummy file to the root of the library
     for lib in libraries:
-        if os.path.dirname(src).startswith(folder + lib):
+        global lasttouch
+        if (
+            os.path.dirname(src).startswith(folder + lib)
+            and lasttouch + touchdelay <= time.time()
+        ):
             f = open(folder + lib + "/" + touchfile, "w")
             f.close()
             os.remove(folder + lib + "/" + touchfile)
             logger("touch", " - touched " + folder + lib + "/\n")
+            lasttouch = time.time()
+            return
+        elif lasttouch + touchdelay > time.time():
+            logger(
+                "touch", f" - nothing touched, touched under {touchdelay} seconds ago\n"
+            )
             return
     logger("touch", " - nothing touched\n")
 
