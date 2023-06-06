@@ -8,6 +8,6 @@ You should set the folder variable as the parent folder that holds your media fo
 
 e.g. when folder is set as /mediaserver/ and libraries is set as "audio", it will monitor the whole mediaserver folder, but will only touch a file in the audio folder when changes are detected in it.<br><br>
 
-touchdelay is implemented, so the script does not do needless writes when moving or saving large amounts of files. Jellyfin inotify implementation updates roughly after a minute from the touch. At this moment it is folderwide, so it does not check which library it has touched, meaning if you copy a file to two different libraries under the delay time it will not touch the second library.
+touchdelay is implemented, so the script does not do needless writes when moving or saving large amounts of files. Jellyfin inotify implementation updates roughly after a minute from the touch.
 
 Works at least with Python3.9 and Watchdog 3.0.0.
