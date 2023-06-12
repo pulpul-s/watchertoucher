@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 -u
 
 import watchdog.events
 import watchdog.observers
@@ -69,10 +69,10 @@ def toucher(src, etype=None):
     # write and delete a dummy file to the root of the library
     global lasttouch
     for lib in libraries:
-        if (os.path.dirname(src).startswith(folder + lib) and lasttouch[1] != lib) or (
+        if (
             os.path.dirname(src).startswith(folder + lib)
             and lasttouch[0] + touchdelay <= time.time()
-        ):
+        ) or (os.path.dirname(src).startswith(folder + lib) and lasttouch[1] != lib):
             f = open(folder + lib + "/" + touchfile, "w")
             f.close()
             os.remove(folder + lib + "/" + touchfile)
@@ -80,7 +80,9 @@ def toucher(src, etype=None):
             lasttouch[0] = time.time()
             lasttouch[1] = lib
             return
-        elif lasttouch[0] + touchdelay > time.time():
+        elif lasttouch[0] + touchdelay > time.time() and os.path.dirname(
+            src
+        ).startswith(folder + lib):
             logger(
                 "touch", f" - nothing touched, touched under {touchdelay} seconds ago\n"
             )
