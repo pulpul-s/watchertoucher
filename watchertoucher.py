@@ -84,7 +84,8 @@ def toucher(src, etype=None):
             src
         ).startswith(folder + lib):
             logger(
-                "touch", f" - nothing touched, touched under {touchdelay} seconds ago\n"
+                "touch",
+                f" - nothing touched, touched under {lib} {touchdelay} seconds ago\n",
             )
             return
     logger("touch", " - nothing touched\n")
