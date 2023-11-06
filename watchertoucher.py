@@ -65,14 +65,27 @@ def logger(etype, src, dest=None):
 lasttouch = [time.time() - touchdelay, ""]
 
 
-def toucher(src, etype=None):
+def toucher(src, dest="", etype=""):
     # write and delete a dummy file to the root of the library
     global lasttouch
     for lib in libraries:
         if (
-            os.path.dirname(src).startswith(folder + lib)
-            and lasttouch[0] + touchdelay <= time.time()
-        ) or (os.path.dirname(src).startswith(folder + lib) and lasttouch[1] != lib):
+            (
+                etype == "move"
+                and os.path.dirname(dest).startswith(folder + lib)
+                and lasttouch[0] + touchdelay <= time.time()
+            )
+            or (
+                etype == "move"
+                and os.path.dirname(dest).startswith(folder + lib)
+                and lasttouch[1] != lib
+            )
+            or (
+                os.path.dirname(src).startswith(folder + lib)
+                and lasttouch[0] + touchdelay <= time.time()
+            )
+            or (os.path.dirname(src).startswith(folder + lib) and lasttouch[1] != lib)
+        ):
             f = open(folder + lib + "/" + touchfile, "w")
             f.close()
             os.remove(folder + lib + "/" + touchfile)
@@ -80,9 +93,15 @@ def toucher(src, etype=None):
             lasttouch[0] = time.time()
             lasttouch[1] = lib
             return
-        elif lasttouch[0] + touchdelay > time.time() and os.path.dirname(
-            src
-        ).startswith(folder + lib):
+        elif (
+            lasttouch[0] + touchdelay > time.time()
+            and os.path.dirname(src).startswith(folder + lib)
+            or (
+                etype == "move"
+                and lasttouch[0] + touchdelay > time.time()
+                and os.path.dirname(dest).startswith(folder + lib)
+            )
+        ):
             logger(
                 "touch",
                 f" - nothing touched, touched {lib} under {touchdelay} seconds ago\n",
@@ -111,7 +130,7 @@ class Handler(watchdog.events.PatternMatchingEventHandler):
 
     def on_moved(self, event):
         logger("move", event.src_path, event.dest_path)
-        toucher(event.src_path)
+        toucher(event.src_path, event.dest_path, "move")
 
 
 if __name__ == "__main__":
