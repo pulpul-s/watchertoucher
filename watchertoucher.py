@@ -33,7 +33,7 @@ touchfile = "watchertoucher.toucher"
 touchdelay = 10
 ## files to ignore, don't remove the touchfile from the list
 ignored_files = [touchfile]
-## Watch the folder recusively True/False
+## Watch the folder recusively True/False, do not change from True
 recur = True
 ## log changes to a file True/False
 logging = False
