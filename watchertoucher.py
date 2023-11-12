@@ -1,5 +1,8 @@
 #!/usr/bin/python3 -u
 
+# watchertoucher 0.0.2
+# https://github.com/pulpul-s/watchertoucher
+
 import watchdog.events
 import watchdog.observers
 from watchdog.observers.polling import PollingObserver
