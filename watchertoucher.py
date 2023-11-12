@@ -50,7 +50,7 @@ def logger(etype, src, dest=None):
     elif etype == "del":
         logentry = pvm + " File removed " + src
     elif etype == "move":
-        logentry = pvm + " File moved or renamed " + src + " " + "->" + " " + dest
+        logentry = pvm + " File moved/renamed " + src + " " + "->" + " " + dest
     elif etype == "touch":
         logentry = src
 
@@ -112,8 +112,7 @@ def toucher(src, dest="", etype=""):
 
 class Handler(watchdog.events.PatternMatchingEventHandler):
     def __init__(self):
-        watchdog.events.PatternMatchingEventHandler.__init__(
-            self,
+        super().__init__(
             patterns=filetypes,
             ignore_patterns=ignored_files,
             ignore_directories=False,
@@ -121,16 +120,25 @@ class Handler(watchdog.events.PatternMatchingEventHandler):
         )
 
     def on_created(self, event):
-        logger("new", event.src_path)
-        toucher(event.src_path)
+        try:
+            logger("new", event.src_path)
+            toucher(event.src_path)
+        except Exception as e:
+            logger("Error in on_created:", str(e))
 
     def on_deleted(self, event):
-        logger("del", event.src_path)
-        toucher(event.src_path)
+        try:
+            logger("del", event.src_path)
+            toucher(event.src_path)
+        except Exception as e:
+            logger("Error in on_deleted:", str(e))
 
     def on_moved(self, event):
-        logger("move", event.src_path, event.dest_path)
-        toucher(event.src_path, event.dest_path, "move")
+        try:
+            logger("move", event.src_path, event.dest_path)
+            toucher(event.src_path, event.dest_path, "move")
+        except Exception as e:
+            logger("Error in on_moved:", str(e))
 
 
 if __name__ == "__main__":
@@ -139,8 +147,18 @@ if __name__ == "__main__":
     observer.schedule(event_handler, path=folder, recursive=recur)
     observer.start()
     try:
+        liblist = ""
+        for index, lib in enumerate(libraries):
+            if index == len(libraries) - 1:
+                liblist += lib
+            else:
+                liblist += lib + ", "
+        print(f"Watchertoucher 0.0.2, watching folder {folder} and libraries {liblist}")
         while True:
             time.sleep(1)
+    except KeyboardInterrupt:
+        print("Exiting...")
+        pass
     finally:
         observer.stop()
         observer.join()
