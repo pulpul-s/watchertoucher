@@ -127,21 +127,21 @@ class Handler(watchdog.events.PatternMatchingEventHandler):
             logger("new", event.src_path)
             toucher(event.src_path)
         except Exception as e:
-            logger("Error in on_created:", str(e))
+            print("Error in on_created:", str(e))
 
     def on_deleted(self, event):
         try:
             logger("del", event.src_path)
             toucher(event.src_path)
         except Exception as e:
-            logger("Error in on_deleted:", str(e))
+            print("Error in on_deleted:", str(e))
 
     def on_moved(self, event):
         try:
             logger("move", event.src_path, event.dest_path)
             toucher(event.src_path, event.dest_path, "move")
         except Exception as e:
-            logger("Error in on_moved:", str(e))
+            print("Error in on_moved:", str(e))
 
 
 if __name__ == "__main__":
