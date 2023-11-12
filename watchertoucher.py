@@ -153,7 +153,7 @@ if __name__ == "__main__":
                 liblist += lib
             else:
                 liblist += lib + ", "
-        print(f"Watchertoucher 0.0.2, watching {folder} and touching {liblist}")
+        print(f"Watchertoucher 0.0.2 - watching {folder} and touching {liblist}")
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
