@@ -1,6 +1,6 @@
 #!/usr/bin/python3 -u
 
-# watchertoucher 0.0.2
+# watchertoucher 0.0.3
 # https://github.com/pulpul-s/watchertoucher
 
 import watchdog.events
@@ -42,6 +42,9 @@ recur = True
 logging = False
 ## logfile location/name
 logfile = "/var/log/watchertoucher.log"
+## polling observer timeout in seconds, higher value means lower cpu usage and slower change detection
+po_timeout = 5
+
 
 
 def logger(etype, src, dest=None):
@@ -146,7 +149,7 @@ class Handler(watchdog.events.PatternMatchingEventHandler):
 
 if __name__ == "__main__":
     event_handler = Handler()
-    observer = PollingObserver()
+    observer = PollingObserver(timeout=po_timeout)
     observer.schedule(event_handler, path=folder, recursive=recur)
     observer.start()
     try:
@@ -156,7 +159,7 @@ if __name__ == "__main__":
                 liblist += lib
             else:
                 liblist += lib + ", "
-        print(f"Watchertoucher 0.0.2 - watching {folder} and touching {liblist}")
+        print(f"Watchertoucher 0.0.3 - watching {folder} and touching {liblist}")
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
