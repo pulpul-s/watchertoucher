@@ -17,12 +17,13 @@ pip install watchdog requests
 ```
 
 Change at least `jellyfin_url`,`api_key` and `mediafolder` parameters on the script, run.<br>
+You should set the mediafolder variable as the parent folder that holds your media folders.
+Python Watchdog will monitor the folder recusively and react to changes made in it.<br>
 
 ```bash
 ./watchertoucher.py
 ```
-You should set the mediafolder variable as the parent folder that holds your media folders.
-Python Watchdog will monitor the folder recusively and react to changes made in it.<br>
+
 
 
 ## Changelog
