@@ -1,17 +1,25 @@
 #!/usr/bin/python3 -u
 
-# watchertoucher 0.0.3
+# watchertoucher - a jellyfin media library refresher on network filesystem changes
 # https://github.com/pulpul-s/watchertoucher
-
-import watchdog.events
-import watchdog.observers
-from watchdog.observers.polling import PollingObserver
 import time
-import os
+import requests
+import threading
+import watchdog.events
+from watchdog.observers.polling import PollingObserver
 from datetime import datetime
 
 
-## files to watch
+# jellyfin url and port (str)
+jellyfin_url = "http://127.0.0.1:8096"
+
+# jellyfin api token, create one in the dashboard (str)
+api_key = "your-api-key"
+
+# parent folder for your media libraries (str)
+mediafolder = "/mediaserver/libraries/"
+
+# files to watch (str[List])
 filetypes = [
     "*.mkv",
     "*.mp4",
@@ -23,97 +31,101 @@ filetypes = [
     "*.webm",
     "*.mp3",
     "*.mp2",
+    "*.ogg",
     "*.flac",
     "*.m4a",
+    "*.srt",
+    "*.sub",
+    "*.ass",
+    "*.idx",
+    "*.smi"
 ]
-## watched folder for changes (this should be the parent directory of your actual media library folders)
-folder = "/mediaserver/libraries/"
-## libraries in watched folder
-libraries = ["video", "audio"]
-## dummy filename
-touchfile = "watchertoucher.toucher"
-## delay in seconds to write new touchfiles, use 0 to disable
-touchdelay = 10
-## files to ignore, don't remove the touchfile from the list
-ignored_files = [touchfile]
-## Watch the folder recusively True/False, do not change from True
-recur = True
-## log changes to a file True/False
-logging = False
-## logfile location/name
+
+# list files to ignore, wildcards supported (str[List])
+ignored_files = ["this.file", "that.file"]
+
+# delay in seconds to prevent api spam if multiple files are created in a short period of time (int)
+delay_seconds = 60
+
+# logging messages to a file (bool)
+log_to_file = True
+
+# logging messages to stdout (bool)
+log_to_stdout = False
+
+# logfile location
 logfile = "/var/log/watchertoucher.log"
-## polling observer timeout in seconds, higher value means lower cpu usage and slower change detection
+
+# polling observer timeout in seconds, higher value
+# means lower cpu usage and slower change detection (int)
 po_timeout = 5
 
+# timestamp format (str)
+date_format = "%Y-%m-%d %H:%M:%S"
 
 
-def logger(etype, src, dest=None):
-    now = datetime.now()
-    pvm = now.strftime("%d.%m.%Y %H:%M:%S")
+# functional variables
+request_scheduled = False
+scheduled_refresh_time = 0
+lock = threading.Lock()
+version = "0.1.0"
 
-    if etype == "new":
-        logentry = pvm + " File created " + src
-    elif etype == "del":
-        logentry = pvm + " File removed " + src
-    elif etype == "move":
-        logentry = pvm + " File moved/renamed " + src + " " + "->" + " " + dest
-    elif etype == "touch":
-        logentry = src
 
-    if logging == True:
-        log = open(logfile, "a")
-        log.write(logentry)
-        log.close()
+def log_message(message, end="\n"):
+    timestamp = datetime.now().strftime(date_format)
+
+    if end != "\n":
+        formatted_message = f"{timestamp} {message}"
     else:
-        print(logentry, end="")
+        formatted_message = f"{message}"
+
+    if log_to_stdout:
+        print(formatted_message + end)
+    if log_to_file:
+        with open(logfile, "a") as log:
+            log.write(formatted_message + end)
 
 
-lasttouch = [time.time() - touchdelay, ""]
+def send_refresh_request():
+    global request_scheduled, scheduled_refresh_time
+
+    with lock:
+        request_scheduled = True
+
+    time.sleep(delay_seconds)
+
+    headers = {"Authorization": f'MediaBrowser Token="{api_key}", Client="watchertoucher {version}"'}
+    response = requests.post(f"{jellyfin_url}/Library/Refresh", headers=headers)
+
+    with lock:
+        request_scheduled = False
+        scheduled_refresh_time = 0
+
+    if response.status_code == 204:
+        log_message("Jellyfin media library refresh request sent successfully\n", end="")
+    elif response.status_code == 401:
+        log_message("Failed to refresh Jellyfin library: 401 Unauthorized\n", end="")
+    elif response.status_code == 403:
+        log_message("Failed to refresh Jellyfin library: 403 Forbidden\n", end="")
+    else:
+        log_message(f"Failed to refresh Jellyfin library: {response.status_code} {response.text}\n", end="")
 
 
-def toucher(src, dest="", etype=""):
-    # write and delete a dummy file to the root of the library
-    global lasttouch
-    for lib in libraries:
-        if (
-            (
-                etype == "move"
-                and os.path.dirname(dest).startswith(folder + lib)
-                and lasttouch[0] + touchdelay <= time.time()
-            )
-            or (
-                etype == "move"
-                and os.path.dirname(dest).startswith(folder + lib)
-                and lasttouch[1] != lib
-            )
-            or (
-                os.path.dirname(src).startswith(folder + lib)
-                and lasttouch[0] + touchdelay <= time.time()
-            )
-            or (os.path.dirname(src).startswith(folder + lib) and lasttouch[1] != lib)
-        ):
-            f = open(folder + lib + "/" + touchfile, "w")
-            f.close()
-            os.remove(folder + lib + "/" + touchfile)
-            logger("touch", " - touched " + folder + lib + "/\n")
-            lasttouch[0] = time.time()
-            lasttouch[1] = lib
+def queue_refresh():
+    global request_scheduled, scheduled_refresh_time
+    with lock:
+        now = time.time()
+        if request_scheduled and scheduled_refresh_time > now:
+            remaining_time = int(scheduled_refresh_time - now)
+            log_message(f", library refresh in {remaining_time} seconds")
             return
-        elif (
-            lasttouch[0] + touchdelay > time.time()
-            and os.path.dirname(src).startswith(folder + lib)
-            or (
-                etype == "move"
-                and lasttouch[0] + touchdelay > time.time()
-                and os.path.dirname(dest).startswith(folder + lib)
-            )
-        ):
-            logger(
-                "touch",
-                f" - nothing touched, touched {lib} under {touchdelay} seconds ago\n",
-            )
-            return
-    logger("touch", " - nothing touched\n")
+
+        scheduled_refresh_time = now + delay_seconds
+        request_scheduled = True
+        refresh_time_str = datetime.fromtimestamp(scheduled_refresh_time).strftime(date_format)
+
+    threading.Thread(target=send_refresh_request, daemon=True).start()
+    log_message(f", library refresh scheduled at {refresh_time_str}")
 
 
 class Handler(watchdog.events.PatternMatchingEventHandler):
@@ -127,44 +139,39 @@ class Handler(watchdog.events.PatternMatchingEventHandler):
 
     def on_created(self, event):
         try:
-            logger("new", event.src_path)
-            toucher(event.src_path)
+            log_message(f"File created: {event.src_path}", end="")
+            queue_refresh()
         except Exception as e:
-            print("Error in on_created:", str(e))
+            log_message(f"Error in on_created: {str(e)}\n", end="")
 
     def on_deleted(self, event):
         try:
-            logger("del", event.src_path)
-            toucher(event.src_path)
+            log_message(f"File removed: {event.src_path}", end="")
+            queue_refresh()
         except Exception as e:
-            print("Error in on_deleted:", str(e))
+            log_message(f"Error in on_deleted: {str(e)}\n", end="")
 
     def on_moved(self, event):
         try:
-            logger("move", event.src_path, event.dest_path)
-            toucher(event.src_path, event.dest_path, "move")
+            log_message(f"File moved/renamed: {event.src_path} -> {event.dest_path}", end="")
+            queue_refresh()
         except Exception as e:
-            print("Error in on_moved:", str(e))
+            log_message(f"Error in on_moved: {str(e)}\n", end="")
 
 
 if __name__ == "__main__":
     event_handler = Handler()
     observer = PollingObserver(timeout=po_timeout)
-    observer.schedule(event_handler, path=folder, recursive=recur)
+    observer.schedule(event_handler, path=mediafolder, recursive=True)
     observer.start()
     try:
-        liblist = ""
-        for index, lib in enumerate(libraries):
-            if index == len(libraries) - 1:
-                liblist += lib
-            else:
-                liblist += lib + ", "
-        print(f"Watchertoucher 0.0.3 - watching {folder} and touching {liblist}")
+        print(f"watchertoucher {version}, watching {mediafolder} and touching jellyfin api")
         while True:
             time.sleep(1)
+
     except KeyboardInterrupt:
         print("Exiting...")
-        pass
+
     finally:
         observer.stop()
         observer.join()
