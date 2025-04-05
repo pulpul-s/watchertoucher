@@ -16,10 +16,14 @@ By default, it schedules the refresh one minute into the future, avoiding API sp
 pip install watchdog requests
 ```
 
-Change at least `jellyfin_url`,`api_key` and `mediafolder` parameters on the script, run.<br>
+Change at least `jellyfin_url`,`api_key` and `mediafolder` parameters on the script.<br>
+
 You should set the `mediafolder` variable as the parent folder that holds your media folders.
 Python Watchdog will monitor the folder recusively and react to changes made in it.<br><br>
-Jellyfin API key can be created in `Settings -> Dashboard -> API Keys`
+
+Jellyfin API key can be created in `Settings -> Dashboard -> API Keys`<br><br>
+
+run:
 
 ```bash
 ./watchertoucher.py
