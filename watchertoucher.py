@@ -68,7 +68,7 @@ date_format = "%Y-%m-%d %H:%M:%S"
 request_scheduled = False
 scheduled_refresh_time = 0
 lock = threading.Lock()
-version = "0.1.0"
+version = "0.1.1"
 
 
 def log_message(message, end="\n"):
@@ -80,10 +80,27 @@ def log_message(message, end="\n"):
         formatted_message = f"{message}"
 
     if log_to_stdout:
-        print(formatted_message + end)
+        print(formatted_message, end=end)
     if log_to_file:
         with open(logfile, "a") as log:
             log.write(formatted_message + end)
+
+
+def is_scan_running():
+    headers = {"Authorization": f'MediaBrowser Token="{api_key}", Client="watchertoucher {version}"'}
+    try:
+        response = requests.get(f"{jellyfin_url}/ScheduledTasks", headers=headers)
+    except Exception as e:
+        log_message(f"Connection to Jellyfin API failed: {e}\n", end="")
+        return
+
+    if response.status_code == 200:
+        for task in response.json():
+            if task.get("Name") == "Scan Media Library" and task.get("State") == "Running":
+                log_message("Library refresh already in progress, re-scheduling at ", end="")
+                return True
+
+    return False
 
 
 def send_refresh_request():
@@ -94,8 +111,20 @@ def send_refresh_request():
 
     time.sleep(delay_seconds)
 
+    if is_scan_running():
+        refresh_at = datetime.fromtimestamp(time.time() + delay_seconds).strftime(date_format)
+        log_message(f"{refresh_at}", end="\n")
+        with lock:
+            scheduled_refresh_time = time.time() + delay_seconds
+        threading.Thread(target=send_refresh_request, daemon=True).start()
+        return
+
     headers = {"Authorization": f'MediaBrowser Token="{api_key}", Client="watchertoucher {version}"'}
-    response = requests.post(f"{jellyfin_url}/Library/Refresh", headers=headers)
+    try:
+        response = requests.post(f"{jellyfin_url}/Library/Refresh", headers=headers)
+    except Exception as e:
+        log_message(f"Connection to Jellyfin API failed: {e}\n", end="")
+        return
 
     with lock:
         request_scheduled = False
