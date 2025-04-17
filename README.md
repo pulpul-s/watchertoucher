@@ -33,6 +33,11 @@ run:
 
 ## Changelog
 
+### watchertoucher 0.1.1:
+- Check if a library refresh is already running and re-schedule by delay_seconds
+- Fix stdout output new lines
+- Better handling of errors
+
 ### watchertoucher 0.1.0:
 - Rewrite of the script logic to use Jellyfin API instead of fooling Linux inotify
 - Simplified and cleaned up the script behavior
